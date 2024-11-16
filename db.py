@@ -12,23 +12,24 @@ DB_CONFIG = {
 }
 
 class PostgreSQLDatabase:
+    # Inicializa a conexão com o PostgreSQL
     def __init__(self, config):
-        """Inicializa a conexão com o PostgreSQL."""
         self.config = config
         self.conn = None
         self.cursor = None
 
+    # Conecta ao banco de dados
     def connect(self):
-        """Conecta ao banco de dados."""
         try:
             self.conn = psycopg2.connect(**self.config)
             self.cursor = self.conn.cursor()
             print("Conexão bem-sucedida com o banco de dados!")
         except Exception as e:
             print(f"Erro ao conectar ao banco de dados: {e}")
-
+   
+    # Cria a tabela no banco de dados
     def create_table(self, table_name):
-        """Cria uma tabela no banco de dados."""
+        
         try:
             query = sql.SQL("""
                 CREATE TABLE IF NOT EXISTS {table} (
@@ -46,8 +47,8 @@ class PostgreSQLDatabase:
         except Exception as e:
             print(f"Erro ao criar tabela: {e}")
 
+    # Insere ou atualiza dados na tabela
     def insert_or_update_data(self, table_name, data):
-        """Insere ou atualiza dados na tabela."""
         try:
             # Renomeando as colunas para que sejam consistentes com o banco
             data.rename(columns={
@@ -76,30 +77,27 @@ class PostgreSQLDatabase:
         except Exception as e:
             print(f"Erro ao inserir ou atualizar dados: {e}")
 
+    # Busca dados da tabela e retorna como um DataFrame
     def fetch_data(self, table_name):
-        """Busca dados da tabela e retorna como um DataFrame."""
         try:
             query = sql.SQL("SELECT * FROM {table}").format(table=sql.Identifier(table_name))
             self.cursor.execute(query)
             rows = self.cursor.fetchall()
 
-            # Verificando se as colunas estão sendo recuperadas corretamente
             colnames = [desc[0] for desc in self.cursor.description]
-            print(f"Colunas recuperadas: {colnames}")  # Debug: Imprimindo as colunas do banco
+            print(f"Colunas recuperadas: {colnames}") 
 
-            # Convertendo para um DataFrame
             df = pd.DataFrame(rows, columns=colnames)
 
-            # Verificando o DataFrame recuperado
             print(f"Dados recuperados do banco de dados: \n{df.head()}")
 
-            return df  # Retorna o DataFrame com os dados
+            return df 
         except Exception as e:
             print(f"Erro ao buscar dados: {e}")
-            return pd.DataFrame()  # Retorna um DataFrame vazio em caso de erro
+            return pd.DataFrame() 
 
+    # Fecha a conexão com o banco de dados
     def close_connection(self):
-        """Fecha a conexão com o banco de dados."""
         if self.cursor:
             self.cursor.close()
         if self.conn:

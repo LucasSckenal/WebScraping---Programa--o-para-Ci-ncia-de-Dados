@@ -1,11 +1,12 @@
 import pandas as pd
+
 class DataCleaner:
     def __init__(self, data: pd.DataFrame):
         self.data = data
 
     def clean_data(self) -> pd.DataFrame:
-        # Verifica as colunas para garantir que 'previous_month' e 'current_month' existem
-        print("Colunas no DataFrame:", self.data.columns)
+        # Limpeza para dados do banco de dados
+        print("Colunas no DataFrame (Banco de Dados):", self.data.columns)
 
         # Substituição de símbolos por strings em todo o DataFrame
         self.data.replace({'🇯🇵': "jp", '🇨🇳': "cn", '🇰🇷': "kr", '🇺🇸': "us", '☠️': 0, '🌐': 'WW'}, inplace=True)
@@ -28,5 +29,16 @@ class DataCleaner:
         region_index = self.data.columns.get_loc('Region')
         self.data = self.data.iloc[:, region_index:]
 
-        print(f"Colunas após renomeação: {self.data.columns}")
+        print(f"Colunas após renomeação (Banco de Dados): {self.data.columns}")
+        return self.data
+
+    def clean_data_graph(self) -> pd.DataFrame:
+        # Limpeza para gráficos
+        print("Colunas no DataFrame (Gráficos):", self.data.columns)
+
+        # Limpeza específica para gráficos (remove quebras de linha, espaços extras, etc.)
+        self.data['game'] = self.data['game'].str.replace('\n', ' ', regex=True).str.strip()
+        self.data['region'] = self.data['region'].str.strip()
+
+        print(f"Colunas após renomeação (Gráficos): {self.data.columns}")
         return self.data

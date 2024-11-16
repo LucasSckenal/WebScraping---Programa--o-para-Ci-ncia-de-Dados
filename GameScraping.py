@@ -9,14 +9,15 @@ class GachaRevenueScraper:
         self.driver = None
         self.table_data = None
 
+    # Inicia o driver do Selenium
     def start_driver(self):
-        """Inicia o driver do Selenium."""
         self.driver = webdriver.Chrome()
         self.driver.get(self.url)
         self.driver.implicitly_wait(10)
 
+    # Extrai os dados da tabela da página
     def extract_table(self):
-        """Extrai os dados da tabela da página."""
+        
         table = self.driver.find_element("tag name", "table")
         headers = [header.text for header in table.find_elements("tag name", "th")]
 
@@ -36,30 +37,27 @@ class GachaRevenueScraper:
         # Criando o DataFrame
         self.table_data = pd.DataFrame(rows, columns=headers)
 
-        # Renomear as colunas de 'Sep 2024' e 'Oct 2024' para 'Last Month' e 'Current Month'
+        
         self.table_data.rename(columns={
             'Sep 2024': 'Last Month',
             'Oct 2024': 'Current Month'
         }, inplace=True)
 
+    # Inicia o processo de coleta de dados e limpeza
     def fetch_data(self):
-        """Inicia o processo de coleta de dados e limpeza."""
         self.start_driver()
         self.extract_table()
 
-        # Aplicando o DataCleaner após a coleta de dados
         cleaner = DataCleaner(self.table_data)
-        self.table_data = cleaner.clean_data()  # Limpa os dados após a extração
-
-        # Exibe a tabela limpa antes de adicionar ao banco
+        self.table_data = cleaner.clean_data()  
         self.display_table()
 
+    
     def get_data(self):
-        """Retorna os dados coletados e limpos em formato DataFrame."""
         return self.table_data
 
+    # Exibe a tabela de maneira estilizada com PrettyTable."""
     def display_table(self):
-        """Exibe a tabela de maneira estilizada com PrettyTable."""
         pretty_table = PrettyTable()
         pretty_table.field_names = self.table_data.columns
 
@@ -68,6 +66,6 @@ class GachaRevenueScraper:
 
         print(pretty_table)
 
+    # Fecha o driver do Selenium
     def close_driver(self):
-        """Fecha o driver do Selenium."""
         self.driver.quit()
