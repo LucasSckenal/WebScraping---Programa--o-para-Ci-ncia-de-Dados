@@ -1,53 +1,43 @@
-from selenium import webdriver
-import pandas as pd
-from prettytable import PrettyTable
+from GameScraping import GachaRevenueScraper
+from db import DB_CONFIG, PostgreSQLDatabase
+from Graficos import ChartGenerator
 
-# Inicia o driver do Selenium (ajuste o caminho para o seu WebDriver)
-driver = webdriver.Chrome()
-
-# URL da página com a tabela
+# URL da página
 url = "https://www.gacharevenue.com/revenue"
-driver.get(url)
 
-# Aguardar a tabela carregar (pode precisar de ajustes dependendo da página)
-driver.implicitly_wait(10)
+try:
+    # Etapa 1: Criação do scraper e extração de dados
+    print("Iniciando o scraper...")
+    scraper = GachaRevenueScraper(url)
+    scraper.fetch_data()
+    data = scraper.get_data()
 
-# Encontrando a tabela na página
-table = driver.find_element("tag name", "table")
+    # Verifica se os dados foram extraídos corretamente
+    if data.empty:
+        raise ValueError("Nenhum dado foi extraído do site.")
 
-# Extraindo cabeçalhos da tabela
-headers = [header.text for header in table.find_elements("tag name", "th")]
+    # Etapa 2: Conexão ao banco de dados e inserção de dados
+    print("Conectando ao banco de dados...")
+    db = PostgreSQLDatabase(DB_CONFIG)
+    db.connect()
+    db.create_table('gacha_revenue')  # Certifique-se de que a tabela tem a estrutura esperada
 
-# Verificar e corrigir cabeçalhos duplicados
-unique_headers = []
-for i, header in enumerate(headers):
-    if header in unique_headers:
-        # Criar um novo nome único para o cabeçalho duplicado
-        headers[i] = f"{header}_{i}"
-    unique_headers.append(headers[i])
+    # Use o método correto para inserção ou atualização
+    db.insert_or_update_data('gacha_revenue', data)
 
-# Extraindo dados da tabela
-rows = []
-for row in table.find_elements("tag name", "tr")[1:]:  # Ignora o cabeçalho
-    cells = [cell.text.strip() for cell in row.find_elements("tag name", "td")]
-    if cells:
-        rows.append(cells)
+    # Etapa 3: Recuperação de dados e geração de gráficos
+    print("Recuperando dados e gerando gráficos...")
+    db_data = db.fetch_data('gacha_revenue')  # Agora, esse método deve retornar um DataFrame
+    chart_generator = ChartGenerator(db_data)
+    chart_generator.generate_bar_chart()
 
-# Criando DataFrame
-df = pd.DataFrame(rows, columns=headers)
+except Exception as e:
+    print(f"Erro: {e}")
 
-# Usando PrettyTable para exibir a tabela de maneira estilizada
-pretty_table = PrettyTable()
-
-# Adicionando os cabeçalhos
-pretty_table.field_names = df.columns
-
-# Adicionando as linhas
-for row in df.itertuples(index=False):
-    pretty_table.add_row(row)
-
-# Exibindo a tabela formatada
-print(pretty_table)
-
-# Fechar o driver
-driver.quit()
+finally:
+    # Garantir o fechamento das conexões, mesmo em caso de erro
+    print("Finalizando operações...")
+    if 'db' in locals():
+        db.close_connection()
+    if 'scraper' in locals():
+        scraper.close_driver()
