@@ -49,6 +49,16 @@ class PostgreSQLDatabase:
     def insert_or_update_data(self, table_name, data):
         """Insere ou atualiza dados na tabela."""
         try:
+            # Renomeando as colunas para que sejam consistentes com o banco
+            data.rename(columns={
+                'Last Month': 'previous_month',
+                'Current Month': 'current_month'
+            }, inplace=True)
+
+            # Garantindo que as colunas de receita sejam numéricas
+            data['current_month'] = pd.to_numeric(data['current_month'], errors='coerce')
+            data['previous_month'] = pd.to_numeric(data['previous_month'], errors='coerce')
+
             query = sql.SQL("""
                 INSERT INTO {table} (region, game, current_month, previous_month)
                 VALUES (%s, %s, %s, %s)
@@ -58,33 +68,35 @@ class PostgreSQLDatabase:
                     previous_month = EXCLUDED.previous_month;  -- Atualiza o valor de previous_month
             """).format(table=sql.Identifier(table_name))
 
-            # Verificando as colunas do DataFrame para depurar
-            print(f"Colunas no DataFrame: {data.columns}")
-
-            # Renomeando as colunas para que sejam consistentes com o banco
-            data.rename(columns={
-                'Last Month': 'previous_month',
-                'Current Month': 'current_month'
-            }, inplace=True)
-
+            # Inserção em massa para otimizar a performance
             for _, row in data.iterrows():
-                print(f"Inserindo ou atualizando dados: {row['Region']}, {row['Game']}, {row['current_month']}, {row['previous_month']}")
-                self.cursor.execute(query, (row['Region'], row['Game'], row['previous_month'], row['current_month']))
+                self.cursor.execute(query, (row['Region'], row['Game'], row['current_month'], row['previous_month']))
             self.conn.commit()
             print("Dados inseridos ou atualizados com sucesso!")
         except Exception as e:
             print(f"Erro ao inserir ou atualizar dados: {e}")
 
     def fetch_data(self, table_name):
-        """Busca dados da tabela."""
+        """Busca dados da tabela e retorna como um DataFrame."""
         try:
             query = sql.SQL("SELECT * FROM {table}").format(table=sql.Identifier(table_name))
             self.cursor.execute(query)
             rows = self.cursor.fetchall()
-            for row in rows:
-                print(row)
+
+            # Verificando se as colunas estão sendo recuperadas corretamente
+            colnames = [desc[0] for desc in self.cursor.description]
+            print(f"Colunas recuperadas: {colnames}")  # Debug: Imprimindo as colunas do banco
+
+            # Convertendo para um DataFrame
+            df = pd.DataFrame(rows, columns=colnames)
+
+            # Verificando o DataFrame recuperado
+            print(f"Dados recuperados do banco de dados: \n{df.head()}")
+
+            return df  # Retorna o DataFrame com os dados
         except Exception as e:
             print(f"Erro ao buscar dados: {e}")
+            return pd.DataFrame()  # Retorna um DataFrame vazio em caso de erro
 
     def close_connection(self):
         """Fecha a conexão com o banco de dados."""

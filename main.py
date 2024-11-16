@@ -20,16 +20,25 @@ try:
     print("Conectando ao banco de dados...")
     db = PostgreSQLDatabase(DB_CONFIG)
     db.connect()
-    db.create_table('gacha_revenue')  # Certifique-se de que a tabela tem a estrutura esperada
+    db.create_table('gacha_revenue')  # Cria a tabela se ela não existir
 
-    # Use o método correto para inserção ou atualização
+    # Inserir ou atualizar os dados no banco
     db.insert_or_update_data('gacha_revenue', data)
 
-    # Etapa 3: Recuperação de dados e geração de gráficos
-    print("Recuperando dados e gerando gráficos...")
-    db_data = db.fetch_data('gacha_revenue')  # Agora, esse método deve retornar um DataFrame
-    chart_generator = ChartGenerator(db_data)
-    chart_generator.generate_bar_chart()
+    # Etapa 3: Recuperação de dados do banco de dados
+    print("Recuperando dados do banco de dados...")
+    db_data = db.fetch_data('gacha_revenue')  # Recupera os dados do banco e armazena em db_data
+
+    # Agora db_data contém os dados que podem ser utilizados para gráficos
+
+    # Etapa 4: Geração dos gráficos
+    print("Gerando gráficos...")
+    chart_generator = ChartGenerator(db_data)  # Passando o DataFrame recuperado
+    chart_generator.generate_bar_chart()  # Gera o gráfico de barras
+    chart_generator.generate_pie_chart()  # Gera o gráfico de pizza
+    chart_generator.generate_top_10_games_avg()  # Gera o gráfico dos 10 melhores jogos
+    chart_generator.generate_comparison_chart()  # Gera o gráfico comparativo
+    chart_generator.generate_total_revenue_chart()  # Gera o gráfico de receita total
 
 except Exception as e:
     print(f"Erro: {e}")
