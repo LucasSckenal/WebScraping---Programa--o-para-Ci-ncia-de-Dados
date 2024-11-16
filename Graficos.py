@@ -98,7 +98,7 @@ class ChartGenerator:
 
             plt.xlabel('Total Revenue ($)')
             plt.ylabel('Month')
-            plt.title('Total Revenue Comparison: Current Month vs Previous Month')
+            plt.title('Comparacao de lucro entre os meses')
 
             plt.gca().xaxis.set_major_formatter(FuncFormatter(self.format_large_numbers))
 
@@ -159,7 +159,7 @@ class ChartGenerator:
 
             plt.xlabel('Region')
             plt.ylabel('Total Revenue ($)')
-            plt.title('Revenue by Server Region (Current Month)')
+            plt.title('lucro de cada servidor')
             plt.gca().yaxis.set_major_formatter(FuncFormatter(self.format_large_numbers))
             plt.xticks(rotation=45)
             plt.legend(title='Regions')
