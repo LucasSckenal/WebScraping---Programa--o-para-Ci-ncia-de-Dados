@@ -52,9 +52,13 @@ class PostgreSQLDatabase:
         try:
             # Renomeando as colunas para que sejam consistentes com o banco
             data.rename(columns={
+                'Region': 'region',
+                'Game': 'game',
                 'Last Month': 'previous_month',
                 'Current Month': 'current_month'
             }, inplace=True)
+            print("Data ready for insertion:")
+            print(data.head())  # Verifique os dados antes de inseri-los
 
             # Garantindo que as colunas de receita sejam numéricas
             data['current_month'] = pd.to_numeric(data['current_month'], errors='coerce')
@@ -63,15 +67,16 @@ class PostgreSQLDatabase:
             query = sql.SQL("""
                 INSERT INTO {table} (region, game, current_month, previous_month)
                 VALUES (%s, %s, %s, %s)
-                ON CONFLICT (region, game)  -- Caso a combinação de region e game já exista
+                ON CONFLICT (region, game)  
                 DO UPDATE SET
-                    current_month = EXCLUDED.current_month,  -- Atualiza o valor de current_month
-                    previous_month = EXCLUDED.previous_month;  -- Atualiza o valor de previous_month
+                    current_month = EXCLUDED.current_month,  
+                    previous_month = EXCLUDED.previous_month;
             """).format(table=sql.Identifier(table_name))
 
             # Inserção em massa para otimizar a performance
             for _, row in data.iterrows():
-                self.cursor.execute(query, (row['Region'], row['Game'], row['current_month'], row['previous_month']))
+                print(f"Inserting: {row['region']}, {row['game']}, {row['current_month']}, {row['previous_month']}")
+                self.cursor.execute(query, (row['region'], row['game'], row['current_month'], row['previous_month']))
             self.conn.commit()
             print("Dados inseridos ou atualizados com sucesso!")
         except Exception as e:
