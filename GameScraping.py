@@ -1,8 +1,7 @@
 from selenium import webdriver
 import pandas as pd
 from prettytable import PrettyTable
-from CleaningData import DataCleaner  # Importando a classe DataCleaner
-
+from CleaningData import DataCleaner  
 class GachaRevenueScraper:
     def __init__(self, url):
         self.url = url
